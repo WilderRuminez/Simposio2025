@@ -1,0 +1,33 @@
+{% include "shared/cabecera_admin.html" %}
+
+<div class="container mt-5">
+    <h1 class="text-center">Lista de Participantes</h1>
+    <table class="table table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Nombre Completo</th>
+                <th>Correo</th>
+                <th>Teléfono</th>
+                <th>Empresa/Institución</th>
+                <th>Tipo de Participante</th>
+                <th>Estado de Pago</th>
+                <th>Asistencia</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for participante in participantes %}
+            <tr>
+                <td>{{ participante.id }}</td>
+                <td>{{ participante.nombre_completo }}</td>
+                <td>{{ participante.correo }}</td>
+                <td>{{ participante.telefono }}</td>
+                <td>{{ participante.empresa }}</td>
+                <td>{{ participante.tipo_participante }}</td>
+                <td>{{ participante.estado_pago }}</td>
+                <td>{{ 'Asistió' if participante.asistencia else 'No asistió' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

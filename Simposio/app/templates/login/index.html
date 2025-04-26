@@ -1,0 +1,42 @@
+{% include "shared/cabecera.html" %}
+<!--LOGIN-->
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <form class="form-control" action="acceso-login" method="post">
+                <h1 class="text-center t">Login</h1>
+
+                <!-- Mostrar mensajes de éxito o error -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div>
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                <!-- Campo de correo -->
+                <div class="form-group">
+                    <label for="exampleInputEmail1" class="t">Correo</label>
+                    <input type="email" class="form-control" id="exampleInputEmail1" placeholder="Ingrese su Correo" name="txtCorreo" required>
+                </div>
+
+                <!-- Campo de contraseña -->
+                <div class="form-group mt-3">
+                    <label for="exampleInputPassword1" class="t">Contraseña</label>
+                    <input type="password" class="form-control" id="exampleInputPassword1" placeholder="Ingrese su Contraseña" name="txtPassword" required>
+                </div>
+
+                <!-- Botón de inicio de sesión -->
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-success w-100">Ingresar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

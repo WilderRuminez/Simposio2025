@@ -1,0 +1,275 @@
+{% include "shared/cabecera_admin.html" %}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <h1 class="text-center mt-4 mb-3">Registro de Asistencia</h1>
+            
+            <!-- Contenedor del lector QR (pantalla completa en mobile) -->
+            <div id="scanner-container" style="display: none;">
+                <div id="qr-reader" class="mb-3" style="width: 100%; max-width: 600px; margin: 0 auto; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"></div>
+                <div class="text-center mb-4">
+                    <button id="switchCamera" class="btn btn-info me-2"><i class="fas fa-sync"></i> Cambiar cámara</button>
+                    <button id="stopCamera" class="btn btn-danger"><i class="fas fa-times"></i> Cerrar</button>
+                </div>
+            </div>
+            
+            <!-- Contenedor del formulario y controles -->
+            <div id="form-container">
+                <div class="text-center mb-4">
+                    <button id="startCamera" class="btn btn-primary btn-lg"><i class="fas fa-camera"></i> Escanear código QR</button>
+                </div>
+                
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <form id="checkinForm" method="post">
+                            <div class="form-group mb-3">
+                                <label for="codigoQR" class="form-label">Código QR</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="codigoQR" name="codigo_qr" 
+                                        placeholder="Escanea o ingresa el código QR" required>
+                                    <button id="submitForm" class="btn btn-success" type="submit">
+                                        <i class="fas fa-check-circle"></i> Registrar
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Instrucciones -->
+                <div class="card bg-light mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">¿Cómo usar el escáner?</h5>
+                        <ol class="mb-0">
+                            <li>Haz clic en "Escanear código QR"</li>
+                            <li>Permite el acceso a la cámara</li>
+                            <li>Apunta la cámara al código QR</li>
+                            <li>El sistema detectará automáticamente el código</li>
+                        </ol>
+                    </div>
+                </div>
+                
+                <!-- Mensaje de respuesta -->
+                <div id="responseMessage" class="mb-4"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Incluir FontAwesome para los iconos -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<!-- Script para html5-qrcode -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+    let qrReader = null;
+    let isScanning = false;
+    let currentCamera = 'environment'; // 'environment' es cámara trasera, 'user' es frontal
+
+    // Elementos del DOM
+    const startCameraButton = document.getElementById('startCamera');
+    const stopCameraButton = document.getElementById('stopCamera');
+    const switchCameraButton = document.getElementById('switchCamera');
+    const qrReaderElement = document.getElementById('qr-reader');
+    const scannerContainer = document.getElementById('scanner-container');
+    const formContainer = document.getElementById('form-container');
+    const codigoQRInput = document.getElementById('codigoQR');
+    const responseMessage = document.getElementById('responseMessage');
+    const checkinForm = document.getElementById('checkinForm');
+
+    // Configuración del lector QR (similar a escanearqr.com)
+    const qrConfig = {
+        fps: 15,                           // Mayor FPS para una detección más rápida
+        qrbox: { width: 300, height: 300 }, // Cuadro de escaneo más grande
+        aspectRatio: window.innerWidth > 800 ? 1.0 : window.innerWidth / window.innerHeight,
+        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+        disableFlip: false,                // Permitir flip horizontal
+        showTorchButtonIfSupported: true,  // Mostrar botón de linterna si es compatible
+        showZoomSliderIfSupported: true,   // Mostrar control de zoom si es compatible
+    };
+
+    // Función para mostrar mensajes
+    function showMessage(text, isSuccess) {
+        const alertClass = isSuccess ? 'alert-success' : 'alert-danger';
+        responseMessage.innerHTML = `<div class="alert ${alertClass} shadow-sm">${text}</div>`;
+        
+        // Auto-ocultar el mensaje después de 5 segundos
+        setTimeout(() => {
+            responseMessage.innerHTML = '';
+        }, 5000);
+    }
+
+    // Función para mostrar el escáner y ocultar el formulario
+    function showScanner() {
+        scannerContainer.style.display = 'block';
+        formContainer.style.display = 'none';
+        startScanner();
+    }
+
+    // Función para mostrar el formulario y ocultar el escáner
+    function showForm() {
+        scannerContainer.style.display = 'none';
+        formContainer.style.display = 'block';
+        stopScanner();
+    }
+
+    // Función para iniciar la cámara
+    function startScanner() {
+        if (isScanning) return;
+
+        // Crear instancia del lector QR
+        qrReader = new Html5Qrcode("qr-reader");
+        
+        // Configurar para pantalla completa en dispositivos móviles
+        if (window.innerWidth < 768) {
+            qrConfig.qrbox = { width: window.innerWidth * 0.8, height: window.innerWidth * 0.8 };
+        }
+        
+        // Iniciar la cámara (con la cámara actual)
+        qrReader.start(
+            { facingMode: currentCamera },
+            qrConfig,
+            handleQrCodeSuccess,
+            handleQrCodeError
+        ).catch(err => {
+            console.error("Error al iniciar la cámara:", err);
+            
+            // Si falla, intentar con la otra cámara
+            currentCamera = currentCamera === 'environment' ? 'user' : 'environment';
+            
+            qrReader.start(
+                { facingMode: currentCamera },
+                qrConfig,
+                handleQrCodeSuccess,
+                handleQrCodeError
+            ).catch(frontErr => {
+                console.error("Error al iniciar cámaras:", frontErr);
+                showMessage("No se pudo acceder a ninguna cámara. Verifica los permisos del navegador.", false);
+                showForm();
+            });
+        });
+        
+        isScanning = true;
+    }
+
+    // Función para cambiar entre cámaras
+    function switchCamera() {
+        if (!isScanning || !qrReader) return;
+        
+        // Detener la cámara actual
+        qrReader.stop().then(() => {
+            // Cambiar la cámara
+            currentCamera = currentCamera === 'environment' ? 'user' : 'environment';
+            
+            // Reiniciar con la nueva cámara
+            startScanner();
+        }).catch(err => {
+            console.error("Error al cambiar de cámara:", err);
+            showMessage("No se pudo cambiar de cámara", false);
+        });
+    }
+
+    // Función para manejar escaneo exitoso
+    function handleQrCodeSuccess(decodedText) {
+        // Vibrar el dispositivo si es posible (como escanearqr.com)
+        if (navigator.vibrate) {
+            navigator.vibrate(100);
+        }
+        
+        // Reproducir un sonido de éxito
+        const beepSound = new Audio("data:audio/wav;base64,//uQRAAAAWMSLwUIYAAsYkXgoQwAEaYLWfkWgAI0wWs/ItAAAGDgYtAgAyN+QWaAAihwMWm4G8QQRDiMcCBcH3Cc+CDv/7xA4Tvh9Rz/y8QADBwMWgQAZG/ILNAARQ4GLTcDeIIIhxGOBAuD7hOfBB3/94gcJ3w+o5/5eIAIAAAVwWgQAVQ2ORaIQwEMAJiDg95G4nQL7mQVWI6GwRcfsZAcsKkJvxgxEjzFUgfHoSQ9Qq7KNwqHwuB13MA4a1q/DmBrHgPcmjiGoh//EwC5nGPEmS4RcfkVKOhJf+WOgoxJclFz3kgn//dBA+ya1GhurNn8zb//9NNutNuhz31f////9vt///z+IdAEAAAK4LQIAKobHItEIYCGAExBwe8jcToF9zIKrEdDYIuP2MgOWFSE34wYiR5iqQPj0JIeoVdlG4VD4XA67mAcNa1fhzA1jwHuTRxDUQ//iYBczjHiTJcIuPyKlHQkv/LHQUYkuSi57yQT//uggfZNajQ3Vm//Lm//GbZuDtj//6Xmvyv//i//8///pNVFH//v//7//+/uAP/rikO//z//+///v/+r//wcAAAAAAACH5BAkKAAEALAAAAAABAAEAAAICLAEAOw==");
+        beepSound.play();
+        
+        // Establecer el valor y volver al formulario
+        codigoQRInput.value = decodedText;
+        showForm();
+        
+        // Enviar el formulario automáticamente
+        checkinForm.dispatchEvent(new Event('submit'));
+    }
+
+    // Función para manejar errores de escaneo
+    function handleQrCodeError(errorMessage) {
+        // No mostrar estos errores al usuario ya que son parte del funcionamiento normal
+        console.log("Buscando código QR...");
+    }
+
+    // Función para detener el escáner
+    function stopScanner() {
+        if (!isScanning || !qrReader) return;
+        
+        qrReader.stop().then(() => {
+            isScanning = false;
+            qrReader = null;
+        }).catch(err => {
+            console.error("Error al detener el lector de QR:", err);
+            isScanning = false;
+            qrReader = null;
+        });
+    }
+
+    // Event Listeners
+    startCameraButton.addEventListener('click', showScanner);
+    stopCameraButton.addEventListener('click', showForm);
+    switchCameraButton.addEventListener('click', switchCamera);
+
+    // Manejo del formulario
+    checkinForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const codigoQR = codigoQRInput.value.trim();
+        if (!codigoQR) {
+            showMessage("Por favor ingrese o escanee un código QR", false);
+            return;
+        }
+
+        try {
+            // Mostrar indicador de carga
+            responseMessage.innerHTML = '<div class="alert alert-info shadow-sm"><i class="fas fa-spinner fa-spin"></i> Procesando...</div>';
+            
+            // Enviar el código QR al servidor
+            const response = await fetch('{{ url_for("checkin.registrar_asistencia") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ codigo_qr: codigoQR })
+            });
+
+            const result = await response.json();
+            
+            // Mostrar el mensaje de respuesta
+            showMessage(result.message, result.status === 'success');
+            
+            // Limpiar el campo de entrada y enfocar para el siguiente escaneo
+            codigoQRInput.value = '';
+            codigoQRInput.focus();
+            
+        } catch (error) {
+            console.error("Error al procesar la solicitud:", error);
+            showMessage("Error de conexión. Intente nuevamente.", false);
+        }
+    });
+
+    // Manejar errores de permiso
+    navigator.permissions && navigator.permissions.query({name: 'camera'})
+        .then(function(permissionStatus) {
+            permissionStatus.onchange = function() {
+                if (permissionStatus.state === 'denied') {
+                    showForm();
+                    showMessage("Permiso de cámara denegado. Por favor habilite el acceso a la cámara.", false);
+                }
+            };
+        });
+        
+    // Ajustar tamaño del escáner en cambio de orientación
+    window.addEventListener('resize', function() {
+        if (isScanning && qrReader) {
+            // Reiniciar el escáner para adaptarse al nuevo tamaño
+            stopScanner();
+            startScanner();
+        }
+    });
+
+    // Detener el escáner si la página se cierra o cambia
+    window.addEventListener('beforeunload', stopScanner);
+</script>

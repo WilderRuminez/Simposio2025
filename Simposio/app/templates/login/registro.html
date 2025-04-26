@@ -1,0 +1,125 @@
+{% include "shared/cabecera.html" %}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4 caja">
+
+            <!-- Mostrar mensajes de éxito o error -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div>
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <!-- Formulario de registro -->
+            <form class="form-control" action="{{ url_for('registro.crear_registro') }}" method="post" enctype="multipart/form-data">
+                <h1 class="text-center t">Registro</h1>
+
+                <!-- Nombre Completo -->
+                <div class="form-group mt-3">
+                    <label for="nombreCompleto" class="t">Nombre Completo</label>
+                    <input type="text" class="form-control" id="nombreCompleto" placeholder="Ingrese su nombre completo" name="txtNombre" required>
+                </div>
+
+                <!-- Correo -->
+                <div class="form-group mt-3">
+                    <label for="correo" class="t">Correo Electrónico</label>
+                    <input type="email" class="form-control" id="correo" placeholder="Ingrese su correo electrónico" name="txtCorreo" required>
+                </div>
+
+                <!-- Teléfono -->
+                <div class="form-group mt-3">
+                    <label for="telefono" class="t">Número de Teléfono</label>
+                    <input type="text" class="form-control" id="telefono" placeholder="Ingrese su número de teléfono" name="txtTelefono" required>
+                </div>
+
+                <!-- Empresa/Institución -->
+                <div class="form-group mt-3">
+                    <label for="empresa" class="t">Empresa/Institución</label>
+                    <select class="form-control" id="empresa" name="txtEmpresa" required>
+                        <option value="Estudiante Universidad Mariano Gálvez">Estudiante Universidad Mariano Gálvez</option>
+                        <option value="Docente Universidad Mariano Gálvez">Docente Universidad Mariano Gálvez</option>
+                        <option value="Externo">Externo</option>
+                    </select>
+                </div>
+
+                <!-- Tipo de Participante -->
+                <div class="form-group mt-3">
+                    <label for="tipoParticipante" class="t">Tipo de Participante</label>
+                    <select class="form-control" id="tipoParticipante" name="txtTipoParticipante" required onchange="toggleCarnetField()">
+                        <option value="Estudiante">Estudiante</option>
+                        <option value="Docente">Docente</option>
+                        <option value="Externo">Externo</option>
+                    </select>
+                </div>
+
+                <!-- Carnet (Solo para Estudiantes) -->
+                <div class="form-group mt-3" id="carnetField" style="display: none;">
+                    <label for="carnet" class="t">Carnet</label>
+                    <input type="text" class="form-control" id="carnet" placeholder="Ingrese su carnet" name="txtCarnet">
+                </div>
+
+                <!-- Contraseña -->
+                <div class="form-group mt-3">
+                    <label for="password" class="t">Contraseña</label>
+                    <input type="password" class="form-control" id="password" placeholder="Ingrese su contraseña" name="txtPassword" required>
+                </div>
+
+                <!-- Confirmar Contraseña -->
+                <div class="form-group mt-3">
+                    <label for="confirmPassword" class="t">Confirmar Contraseña</label>
+                    <input type="password" class="form-control" id="confirmPassword" placeholder="Confirme su contraseña" required>
+                </div>
+
+                <!-- Comprobante de Pago -->
+                <div class="form-group mt-3">
+                    <label for="comprobante" class="t">Comprobante de Pago</label>
+                    <input type="file" class="form-control" id="comprobante" name="comprobante" accept=".pdf" required>
+                </div>
+
+                <!-- Botón de Registro -->
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-success w-100">Registrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Mostrar u ocultar el campo "Carnet" según el tipo de participante
+    function toggleCarnetField() {
+        const tipoParticipante = document.getElementById('tipoParticipante').value;
+        const carnetField = document.getElementById('carnetField');
+        const carnetInput = document.getElementById('carnet');
+
+        if (tipoParticipante === 'Estudiante') {
+            carnetField.style.display = 'block'; // Mostrar el campo
+            carnetInput.setAttribute('required', 'required'); // Hacerlo obligatorio
+        } else {
+            carnetField.style.display = 'none'; // Ocultar el campo
+            carnetInput.removeAttribute('required'); // Quitar la obligatoriedad
+        }
+    }
+
+    // Validar que las contraseñas coincidan antes de enviar el formulario
+    document.querySelector('form').addEventListener('submit', function (e) {
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        if (password !== confirmPassword) {
+            e.preventDefault(); // Evitar el envío del formulario
+            alert('Las contraseñas no coinciden. Por favor, verifica e inténtalo de nuevo.');
+        }
+    });
+
+    // Ejecutar la función al cargar la página para manejar valores preseleccionados
+    document.addEventListener('DOMContentLoaded', toggleCarnetField);
+</script>

@@ -1,0 +1,29 @@
+{% include "shared/cabecera_admin.html" %}
+
+<div class="container mt-5">
+    <h1 class="text-center t">Lista de Usuarios</h1>
+    {% if usuarios %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col">Nº</th>
+                    <th scope="col">Correo</th>
+                    <th scope="col">Password</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mostrar in usuarios %}
+                <tr>
+                    <th scope="row">{{ mostrar.id }}</th>
+                    <td>{{ mostrar.correo }}</td>
+                    <td>{{ mostrar.password }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-center">No hay datos</p>
+    {% endif %}
+</div>

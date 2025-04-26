@@ -1,0 +1,65 @@
+{% include "shared/cabecera_admin.html" %}
+
+<div class="container mt-5">
+    <h1 class="text-center">Validar Pagos</h1>
+    <table class="table table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Comprobante</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pago in pagos_pendientes %}
+            <tr>
+                <td>{{ pago.id }}</td>
+                <td>{{ pago.nombre_completo }}</td>
+                <td>{{ pago.correo }}</td>
+                <td>
+                    <!-- Botón para abrir el modal -->
+                    <button class="btn btn-primary btn-sm" onclick="verComprobante('{{ pago.id }}')">Ver Comprobante</button>
+                </td>
+                <td>
+                    <form action="{{ url_for('pagos.aprobar_pago', id=pago.id) }}" method="post" style="display:inline;">
+                        <button class="btn btn-success btn-sm">Aprobar</button>
+                    </form>
+                    <form action="{{ url_for('pagos.rechazar_pago', id=pago.id) }}" method="post" style="display:inline;">
+                        <button class="btn btn-danger btn-sm">Rechazar</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal para mostrar el comprobante -->
+<div class="modal fade" id="comprobanteModal" tabindex="-1" aria-labelledby="comprobanteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="comprobanteModalLabel">Comprobante</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <!-- Contenedor para mostrar el comprobante -->
+                <iframe id="comprobanteFrame" src="" frameborder="0" style="width: 100%; height: 500px;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function verComprobante(id) {
+        // Construye la URL del endpoint para obtener el comprobante
+        const url = `/get_comprobante/${id}`;
+        // Establece la URL del comprobante en el iframe
+        document.getElementById('comprobanteFrame').src = url;
+        // Muestra el modal
+        var modal = new bootstrap.Modal(document.getElementById('comprobanteModal'));
+        modal.show();
+    }
+</script>

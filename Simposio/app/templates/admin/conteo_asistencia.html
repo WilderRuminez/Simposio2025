@@ -1,0 +1,10 @@
+{% include "shared/cabecera_admin.html" %}
+
+<div class="container mt-5">
+    <h1 class="text-center">Conteo de Asistencia</h1>
+    <div class="text-center mt-4">
+        <h3>Total de Participantes: {{ total_participantes }}</h3>
+        <h3>Total de Asistentes: {{ total_asistencia }}</h3>
+        <h3>Porcentaje de Asistencia: {{ (total_asistencia / total_participantes) * 100 if total_participantes > 0 else 0 }}%</h3>
+    </div>
+</div>
